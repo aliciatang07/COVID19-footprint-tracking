@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="d-flex justify-content-center mt-5">
+        <div class="w-75" style="position: relative" aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item" aria-current="page"><a href="{{ url_for('main') }}">Home</a></li>
+                <li class="breadcrumb-item" aria-current="page">Actions</li>
+                <li class="breadcrumb-item active" aria-current="page">Self-Assessment History</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="card-center mt-5">
+        {% if assessment_exist %}
+        <div class="card text-white bg-{{ risk_level }}">
+            <div class="card-body">
+                <h5 class="card-title">Assessment Result</h5>
+                <p class="card-text">{{ result }}</p>
+            </div>
+        </div>
+        <div class="card mt-4">
+            <div class="card-body">
+                <p><h5>1. Have you had in-person closed contact with patients who diagnosed with coronavirus?</h5></p>
+                <div class="alert alert-secondary">
+                    {{ q1 }}
+                </div>
+            </div>
+        </div>
+        <div class="card mt-4">
+            <div class="card-body">
+                <p><h5>2. Have you visited a place that patients who diagnosed with coronavirus has been to?</h5></p>
+                <div class="alert alert-secondary">
+                    {{ q2 }}
+                </div>
+            </div>
+        </div>
+        <div class="card mt-4">
+            <div class="card-body">
+                <p><h5>3. Have you traveled to foreign countries in the last 14 days?</h5></p>
+                <div class="alert alert-secondary">
+                    {{ q3 }}
+                </div>
+            </div>
+        </div>
+        <div class="card mt-4">
+            <div class="card-body">
+                <p><h5>4. Do you have the following symptoms?</h5></p>
+                {% for symptom in q4 %}
+                <div class="alert alert-secondary">
+                    {{ symptom }}
+                </div>
+                {% else %}
+                <div class="alert alert-secondary">
+                    no
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+{% endblock %}

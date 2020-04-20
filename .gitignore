@@ -1,0 +1,9 @@
+*.csv
+app/__pycache__/
+*.pyc
+app/*.pyc
+.idea/
+venv/
+.vscode/
+ignore/
+config/

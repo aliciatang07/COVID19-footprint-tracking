@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="d-flex justify-content-center mt-5">
+        <div class="w-75" style="position: relative" aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item" aria-current="page"><a href="{{ url_for('main') }}">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Patient Footprint Map</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="card-center mt-5">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">Basic Search</h3>
+                <form method="post" action="{{ url_for('render_footprint') }}">
+                    <div class="form-row">
+                        <div class="form-group col-md-12">
+                            <label>Date</label>
+                            <input type="date" class="form-control" name="date" id="date" value="2020-02-01" min="2020-02-01" max="2020-04-31">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-12">
+                            <label>Display Type</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" class="form-check-input" name="maptype" id="heatmap" value="heatmap" checked>
+                                    <label for="heatmap" class="form-check-label">Heatmap</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" class="form-check-input" id="" name="maptype" value="groupmarker" value="groupmarker">
+                                    <label for="groupmarker" class="form-check-label">Group Marker</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group form-row">
+                        <div class="col-sm-2">
+                            <input type="submit" class="btn btn-primary" value="Search">
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

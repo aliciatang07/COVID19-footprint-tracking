@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="map-center mt-5">
+        <div class="row">
+            <div class="col">
+                <h1>COVID-19 Footprint Tracking System</h1>
+            </div>
+        </div>
+        <div class="row mt-5">
+            <div class="card w-100">
+                <div class="card-header align-items-center">
+                    <strong>Dashboard</strong>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    New Patient Footprints
+                                </div>
+                                <div class="card-body">
+                                    <div id="chartContainer" style="height: 300px; width: 100%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    Patient Footprints Over Time
+                                </div>
+                                <div class="card-body">
+                                    <div id="chartContainer2" style="height: 300px; width: 100%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-5">
+            <div class="card w-100">
+                <div class="card-header align-items-center">
+                    <strong>Guide for newcomers to protect other people</strong>
+                </div>
+                <div class="card-body">
+                    <div class="card-text">
+                        <p>1. If you don't have an account, click <strong>Sign up</strong> to create one.</p>
+                        <p>2. Please select <strong>Action > Take COVID-19 Self-Assessment</strong> to do a self-assessment for COVID-19.</p>
+                        <p>3. If the assessment result says you should test for COVID-19 or call the emergency, please submit your recent visited places to the system.</p>
+                        <p>4. If the assessment result says you should do self-isolation, and you feel your symptoms become more violent during self-isolation, or you have been tested positive for COVID-19, please submit your recent visited places to the system.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+    <script>
+        window.onload = function () {
+            var dps_new = []; // dataPoints
+            var chart_new = new CanvasJS.Chart("chartContainer", {
+                axisY: {
+                    includeZero: true
+                },
+                data: [{
+                    type: "line",
+                    dataPoints: dps_new
+                }]
+            });
+
+            var dps_cumulative = [];
+            var chart_cumulative = new CanvasJS.Chart("chartContainer2", {
+                axisY: {
+                    includeZero: true
+                },
+                data: [{
+                    type: "line",
+                    dataPoints: dps_cumulative
+                }]
+            });
+
+            var updateInterval = 60*60*1000;
+            var dataLength_new = 14; // number of dataPoints visible at any point
+            var dataLength_cumulative = 180;
+
+            var updateChart = function (count) {
+                $.ajax({
+                    url: "{{ url_for('fetch_analysis_new')}}",
+                    type: "GET",
+                    contentType: "application/json",
+                    success: function (data) {
+                        //console.log(data);
+
+                        for (var i = 0;i<data.length;i++){
+                            var x_label = Object.keys(data[i])[0];
+                            dps_new.push({
+                                label: x_label,
+                                y: data[i][x_label]
+                            });
+                            if(dps_new.length>dataLength_new){
+                                dps_new.splice(0,1);
+                            }
+                        }
+                        //console.log(dps_new);
+                        chart_new.render();
+                    }
+                });
+                $.ajax({
+                    url: "{{ url_for('fetch_analysis_cumulative')}}",
+                    type: "GET",
+                    contentType: "application/json",
+                    success: function (data) {
+                        //console.log(data);
+
+                        for (var i = 0;i<data.length;i++){
+                            var x_label = Object.keys(data[i])[0];
+                            dps_cumulative.push({
+                                label: x_label,
+                                y: data[i][x_label]
+                            });
+                            if(dps_cumulative.length>dataLength_cumulative){
+                                dps_cumulative.splice(0,1);
+                            }
+                        }
+                        //console.log(dps_cumulative);
+                        chart_cumulative.render();
+                    }
+                });
+            };
+            updateChart(dataLength_cumulative);
+            setInterval(function(){updateChart()}, updateInterval);
+        }
+    </script>
+{% endblock %}

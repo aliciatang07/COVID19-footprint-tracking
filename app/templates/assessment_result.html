@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="d-flex justify-content-center mt-5">
+        <div class="w-75" style="position: relative" aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item" aria-current="page"><a href="{{ url_for('main') }}">Home</a></li>
+                <li class="breadcrumb-item" aria-current="page">Actions</li>
+                <li class="breadcrumb-item" aria-current="page"><a href="{{ url_for('submit_assessment') }}">COVID-19 Self-Assessment</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Result</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="card-center mt-5">
+        <div class="card text-white bg-{{ risk_level }}">
+            <div class="card-body">
+                <h5 class="card-title">Assessment Result</h5>
+                <p class="card-text">{{ response }}</p>
+            </div>
+        </div>
+        <div class="mt-4">
+            <button class="btn btn-secondary" id="tryagain">Do Self-Assessment Again</button>
+        </div>
+    </div>
+
+    <script>
+        $("#tryagain").on("click", function() {
+            window.location.href = "{{ url_for('submit_assessment') }}";
+        });
+    </script>
+{% endblock %}

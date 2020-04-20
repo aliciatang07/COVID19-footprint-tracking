@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+        <meta charset="utf-8">
+        <title>Select Location</title>
+
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+        <style>
+            .map {
+                width: 100%;
+                height: 500px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="d-flex vh-100 justify-content-center align-items-center">
+            <div class="card" style="width: 800px">
+                <div class="card-header">
+                    Location Selector
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <input id="pac-input" class="form-control" type="text" placeholder="Search Map">
+                        </div>
+                    </div>
+                    <div class="row mt-4">
+                        <div id="map" class="map ml-2 mr-2"></div>
+                    </div>
+                    <div class="row">
+                        <div class="ml-2 mr-2">
+                            <form method="post" id="frm" action="">
+                                <input type="hidden" name="lat" id="lat" readonly="yes"><br>
+                                <input type="hidden" name="lng" id="lng" readonly="yes">
+                                <input type="hidden" name="row" value="{{ row }}">
+                                <input type="button" id="cancel" class="btn btn-primary mr-2" value="Cancel">
+                                <input type="button" id="current_location" class="btn btn-primary mr-2" value="Back to current location">
+                                <input type="submit" class="btn btn-success" value="Confirm">
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script type="text/javascript">
+            var map;
+            var marker = false;
+        
+            $("#cancel").on("click", function() {
+                window.location.href = "{{ url_for('footprint_upload') }}"
+            });
+
+            $("#current_location").on("click", function() {
+                center_map();
+            });
+
+            $(document).ready(function (e) {
+                $("#frm").submit(function (e) {
+                    e.preventDefault();
+                    $.ajax({
+                        url: "{{ url_for('footprint_location_change') }}",
+                        type: "POST",
+                        data: $("#frm").serialize(),
+                        success: function(result) {
+                            window.location.href = "{{ url_for('footprint_upload') }}"
+                        },
+                        error: function(x, t, e) {
+                            alert(e)
+                        }
+                    })
+                })
+            })
+
+            function initMap() {
+                var initLat = 52.357971;
+                var initLng = -6.516758;
+                var initMarker = false;
+                if ("{{ lat }}" != "NaN" && "{{ lon }}" != "NaN") {
+                    if (parseFloat("{{ lat }}")) {
+                        initLat = parseFloat("{{ lat }}");
+                        initLng = parseFloat("{{ lon }}");
+                        console.log(initLat);
+                        console.log(initLng);
+                        initMarker = true;
+                    }
+                }
+
+                var centerOfMap = new google.maps.LatLng(initLat, initLng);
+                var options = {
+                    center: centerOfMap,
+                    zoom: 15
+                };
+ 
+                map = new google.maps.Map(document.getElementById('map'), options);
+ 
+                google.maps.event.addListener(map, 'click', function(event) {                
+                    var clickedLocation = event.latLng;
+                    if (marker === false) {
+                        createMarker(clickedLocation);
+                    } else{
+                        marker.setPosition(clickedLocation);
+                    }
+        
+                    markerLocation();
+                });
+
+                if (initMarker == true) {
+                    if (marker === false) {
+                        createMarker(centerOfMap);
+                    } else{
+                        marker.setPosition(centerOfMap);
+                    }
+                    markerLocation();
+                } else
+                    center_map();
+
+                var input = document.getElementById('pac-input');
+                var searchBox = new google.maps.places.SearchBox(input);
+
+                searchBox.addListener('places_changed', function() {
+                    var places = searchBox.getPlaces();
+
+                    if (places.length == 0) {
+                        return;
+                    }
+
+                    var bounds = new google.maps.LatLngBounds();
+                    places.forEach(function(place) {
+                        if (!place.geometry) {
+                            console.log("Returned place contains no geometry");
+                            return;
+                        }
+
+                        if (marker === false) {
+                            createMarker(place.geometry.location);
+                        } else {
+                            marker.setPosition(place.geometry.location);
+                        }
+                        markerLocation();
+
+                        if (place.geometry.viewport) {
+                            bounds.union(place.geometry.viewport);
+                        } else {
+                            bounds.extend(place.geometry.location);
+                        }
+                    });
+                    map.fitBounds(bounds);
+                });
+            }
+
+            function createMarker(location) {
+                marker = new google.maps.Marker({
+                    position: location,
+                    map: map,
+                    draggable: true
+                });
+    
+                google.maps.event.addListener(marker, 'dragend', function(event){
+                    markerLocation();
+                });
+            }
+        
+            function markerLocation(){
+                var currentLocation = marker.getPosition();
+    
+                document.getElementById('lat').value = currentLocation.lat(); //latitude
+                document.getElementById('lng').value = currentLocation.lng(); //longitude
+            }
+            
+            function center_map() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function(position) {
+                        var pos = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        map.setCenter(pos);
+                    })
+                }
+            }
+        </script>
+        <script async defer
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAJ0tsek9WzXlFUJP5-DgYQFcFyahBGLsk&libraries=visualization,places&callback=initMap">
+        </script>
+    </body>
+</html>

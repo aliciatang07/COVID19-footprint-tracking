@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block content %}
+	<div class="d-flex justify-content-center mt-5">
+		<div class="w-75" style="position: relative" aria-label="breadcrumb">
+			<ol class="breadcrumb">
+				<li class="breadcrumb-item" aria-current="page"><a href="{{ url_for('main') }}">Home</a></li>
+				<li class="breadcrumb-item" aria-current="page">Actions</li>
+				<li class="breadcrumb-item active" aria-current="page">COVID-19 Self-Assessment</li>
+			</ol>
+		</div>
+	</div>
+
+	<div class="card-center mt-5">
+        <div class="card">
+            <div class="card-body">
+				<h3 class="card-title">Take a Self-Assessment(COVID-19)</h3>
+				<div style="color: red;">*Required</div>
+			</div>
+		</div>
+		<form method='post' action="{{ url_for('evaluate_results') }}">
+			{% if validation_error %}
+			<div class="card mt-4 border-danger">
+			{% else %}
+			<div class="card mt-4">
+			{% endif %}
+				<div class="card-body">
+					<p>
+						<h5 class="d-inline">1.	Have you had in-person closed contact with patients who diagnosed with coronavirus?</h5>
+						<span style="color: red;">*</span>
+					</p>
+					<input type="radio" id="one_yes" name="one" value=yes>
+					<label for="one_yes">Yes</label><br>
+					<input type="radio" id="one_no" name="one" value=no>
+					<label for="one_no">No</label><br>
+					<input type="radio" id="one_unkown" name="one" value=unknown>
+					<label for="one_unkown">Unknown</label><br>
+				</div>
+			</div>
+			{% if validation_error %}
+			<div class="card mt-4 border-danger">
+			{% else %}
+			<div class="card mt-4">
+			{% endif %}
+				<div class="card-body">
+					<p>
+						<h5 class="d-inline">2.	Have you visited a place that patients who diagnosed with coronavirus has been to?</h5>
+						<span style="color: red;">*</span>
+					</p>
+					<p>If you don't know the answer, please navigate to the home page to check.</p>
+					<input type="radio" id="two_yes" name="two" value=yes>
+					<label for="two_yes">Yes</label><br>
+					<input type="radio" id="two_no "name="two" value=no>
+					<label for="two_no">No</label><br>
+				</div>
+			</div>
+			{% if validation_error %}
+			<div class="card mt-4 border-danger">
+			{% else %}
+			<div class="card mt-4">
+			{% endif %}
+				<div class="card-body">
+					<p>
+						<h5 class="d-inline">3.	Have you traveled to foreign countries in the last 14 days?</h5>
+						<span style="color: red;">*</span>
+					</p>
+					<input type="radio" id="three_yes" name="three" value=yes>
+					<label for="three_yes">Yes</label><br>
+					<input type="radio" id="three_no" name="three" value=no>
+					<label for="three_no">No</label><br>
+				</div>
+			</div>
+			<div class="card mt-4">
+				<div class="card-body">
+					<p><h5>4.	Do you have the following symptoms?</h5></p>
+					<input type="checkbox" id="fever" name="fever" value="Fever">
+					<label for="fever">Fever</label><br>
+					<input type="checkbox" id="cough" name="cough" value="Cough">
+					<label for="cough">Cough</label><br>
+					<input type="checkbox" id="breath" name="breath" value="Severe shortness of breath">
+					<label for="breath">Severe shortness of breath</label><br>
+					<input type="checkbox" id="chest_pain" name="chest_pain" value="Severe chest pain">
+					<label for="chest_pain">Severe chest pain</label><br>
+					<label>Other Symptoms:</label>
+					<input type=text class="form-control" name="other_symptoms">
+				</div>
+			</div>
+			<div class="mt-4">
+				<input type="submit" class="btn btn-primary" value="Submit">
+			</div>
+		</form>
+	</div>
+{% endblock %}

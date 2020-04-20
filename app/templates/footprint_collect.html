@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="d-flex justify-content-center mt-5">
+        <div class="w-75" style="position: relative" aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item" aria-current="page"><a href="{{ url_for('main') }}">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">My Footprints</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="map-center">
+        {% if validation_error %}
+        <div class="alert alert-danger alert-dismissable fade show" role="alert">
+            Please check your input again.
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        {% endif %}
+        <form method="post" id="frm" action="{{ url_for('footprint_upload_submit') }}">
+            <input type="button" class="btn btn-primary mr-2" value="Add Place" onclick="addRow('dataTable')" />
+            <input type="button" class="btn btn-primary mr-2" value="Delete Selected Places" onclick="deleteRow('dataTable')" />
+            <input type="hidden" name="rowCount" id="rowCount" />
+            <input type="hidden" name="rowList" id="rowList" />
+            <input type="submit" class="btn btn-success" value="Save" onclick="checkLength('dataTable')" />
+
+            <table id="dataTable" class="table table-responsive mt-3">
+                <thead class="thead-light">
+                    <tr>
+                        <th></th>
+                        <th>Place #</th>
+                        <th>User</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Duration(min)</th>
+                        <th>Lat</th>
+                        <th>Lon</th>
+                        <th></th>
+                    </tr>
+                </thead>
+
+                <tbody></tbody>
+            </table>
+        </form>
+    </div>
+
+    <script type="text/javascript">
+        var removeList = [];
+        var rowList = [];
+
+        $(document).ready(function() {
+            getData();
+        });
+
+        function getData() {
+            if ("{{ with_storage }}" == "True")
+                var url = "{{ url_for('footprint_readstorage') }}";
+            else 
+                var url = "{{ url_for('footprint_load') }}";
+
+            $.ajax({
+                url: url,
+                type: "GET",
+                contentType: "application/json",
+                success: function (data) {
+                    console.log(data);
+                    var len = data.length;
+                    var table = document.getElementById('dataTable').getElementsByTagName('tbody')[0];;
+
+                    for (var i = 0; i < len; i++) {
+                        var rowCount = table.rows.length;
+                        var rowIdentify = data[i]["uuid"].split("_")[1];
+                        rowList.push(parseInt(rowIdentify))
+                        var row = table.insertRow(rowCount);
+
+                        var cell1 = row.insertCell(0);
+                        var element1 = document.createElement("input");
+                        element1.type = "checkbox";
+                        element1.name = "check";
+                        //element1.className = "form-check-input"
+                        cell1.appendChild(element1);
+
+                        var cell9 = row.insertCell(1);
+                        cell9.innerHTML = rowIdentify;
+                        var element9 = document.createElement("input");
+                        element9.type = "hidden";
+                        element9.name = "row" + rowIdentify;  //this shoudl change to data[i]["uuid"].split("_")[1]
+                        element9.value = rowIdentify;
+                        cell9.appendChild(element9);
+
+                        var user_id = '{{ user_id }}';
+                        var cell2 = row.insertCell(2);
+                        cell2.innerHTML = user_id;
+
+
+                        var cell3 = row.insertCell(3);
+                        var element3 = document.createElement("input");
+                        element3.type = "date";
+                        element3.name = "date" + rowIdentify;
+                        element3.value = data[i]["date"];
+                        element3.className = "form-control";
+                        cell3.appendChild(element3);
+
+                        var cell4 = row.insertCell(4);
+                        var element4 = document.createElement("input");
+                        element4.type = "time";
+                        element4.name = "time" + rowIdentify;
+                        element4.value = data[i]["time"];
+                        element4.className = "form-control";
+                        cell4.appendChild(element4);
+
+                        var cell5 = row.insertCell(5);
+                        var element5 = document.createElement("input");
+                        element5.type = "text";
+                        element5.name = "duration" + rowIdentify;
+                        element5.value = data[i]["duration"];
+                        element5.className = "form-control";
+                        cell5.appendChild(element5);
+
+                        var cell6 = row.insertCell(6);
+                        var element6 = document.createElement("input");
+                        element6.type = "text";
+                        element6.name = "lat" + rowIdentify;
+                        element6.id = "lat" + rowIdentify;
+                        element6.value = data[i]["lat"];
+                        element6.className = "form-control";
+                        element6.style = "min-width: 100px";
+                        cell6.appendChild(element6);
+
+                        var cell7 = row.insertCell(7);
+                        var element7 = document.createElement("input");
+                        element7.type = "text";
+                        element7.name = "lon" + rowIdentify;
+                        element7.id = "lon" + rowIdentify;
+                        element7.value = data[i]["lng"];
+                        element7.className = "form-control";
+                        element7.style = "min-width: 100px";
+                        cell7.appendChild(element7);
+
+                        var cell8 = row.insertCell(8);
+                        var element8 = document.createElement("button");
+                        element8.type = "button";
+                        element8.name = "select" + rowIdentify;
+                        element8.innerHTML = "Select"
+                        const rowid = rowIdentify;
+                        element8.addEventListener("click", function() {
+                            selectFootprint(rowid);
+                        });
+                        element8.className = "btn btn-primary";
+                        cell8.appendChild(element8);
+                    }
+                    console.log("orignal");
+                    console.log(rowList);
+                }
+            });
+        }
+
+        function rowNumHelper(table){
+            var rowCount = table.rows.length;
+            rowList.sort(function(a, b){return b-a});
+            var curMax = 0;
+            if(rowList.length>0 && rowList[0]!='NaN'){
+                var curMax = rowList[0];
+            }
+            console.log(curMax);
+            var rowIdentify = curMax+1;
+            console.log(rowIdentify);
+            return rowIdentify;
+        }
+
+
+        function addRow(tableID) {
+
+            var table = document.getElementById(tableID).getElementsByTagName('tbody')[0];;
+
+            var rowCount = table.rows.length;
+            var rowIdentify = rowNumHelper(table);
+
+            var row = table.insertRow(rowCount);
+            rowList.push(parseInt(rowIdentify));
+
+            var cell1 = row.insertCell(0);
+            var element1 = document.createElement("input");
+            element1.type = "checkbox";
+            element1.name = "check";
+            //element1.className = "form-check-input"
+            cell1.appendChild(element1);
+
+            var cell9 = row.insertCell(1);
+            cell9.innerHTML = rowIdentify;
+            var element9 = document.createElement("input");
+            element9.type = "hidden";
+            element9.name = "row" + rowIdentify;
+            element9.value = rowIdentify;
+            cell9.appendChild(element9);
+
+
+            var user_id = '{{ user_id }}';
+            var cell2 = row.insertCell(2);
+            cell2.innerHTML = user_id;
+
+            var cell3 = row.insertCell(3);
+            var element3 = document.createElement("input");
+            element3.type = "date";
+            element3.name = "date" + rowIdentify;
+            element3.className = "form-control";
+            cell3.appendChild(element3);
+
+            var cell4 = row.insertCell(4);
+            var element4 = document.createElement("input");
+            element4.type = "time";
+            element4.name = "time" + rowIdentify;
+            element4.className = "form-control";
+            cell4.appendChild(element4);
+
+            var cell5 = row.insertCell(5);
+            var element5 = document.createElement("input");
+            element5.type = "text";
+            element5.name = "duration" + rowIdentify;
+            element5.className = "form-control";
+            cell5.appendChild(element5);
+
+            var cell6 = row.insertCell(6);
+            var element6 = document.createElement("input");
+            element6.type = "text";
+            element6.name = "lat" + rowIdentify;
+            element6.id = "lat" + rowIdentify;
+            element6.className = "form-control";
+            element6.style = "min-width: 100px";
+            cell6.appendChild(element6);
+
+            var cell7 = row.insertCell(7);
+            var element7 = document.createElement("input");
+            element7.type = "text";
+            element7.name = "lon" + rowIdentify;
+            element7.id = "lon" + rowIdentify;
+            element7.className = "form-control";
+            element7.style = "min-width: 100px";
+            cell7.appendChild(element7);
+
+            var cell8 = row.insertCell(8);
+            var element8 = document.createElement("button");
+            element8.type = "button";
+            element8.name = "select" + rowIdentify;
+            element8.innerHTML = "Select"
+            element8.addEventListener("click", function() {
+                selectFootprint(rowIdentify);
+            });
+            element8.className = "btn btn-primary";
+            cell8.appendChild(element8);
+
+            console.log(rowList);
+        }
+
+        function deleteRow(tableID) {
+            try {
+                var table = document.getElementById(tableID);
+                var rowCount = table.rows.length;
+
+                for (var i = 0; i < rowCount; i++) {
+                    var row = table.rows[i];
+                    var chkbox = row.cells[0].childNodes[0];
+                    if (null != chkbox && true == chkbox.checked) {
+                        //date
+                        console.log(row.cells[3].childNodes[0].value);
+                        //row
+                        var rowIdent = row.cells[1].childNodes[1].value;
+                        console.log(row.cells[1].childNodes[1].value);
+                        removeList.push({"row":row.cells[1].childNodes[1].value,"date":row.cells[3].childNodes[0].value});
+                        table.deleteRow(i);
+                        var index = rowList.indexOf(parseInt(rowIdent));
+                        if (index !== -1) rowList.splice(index, 1);
+
+                        rowCount--;
+                        i--;
+                    }
+                }
+
+                rowList = rowList.filter(function (value) {
+                return !isNaN(value);
+                });
+                console.log("deleted");
+                console.log(rowList);
+
+                $.ajax({
+                    url: "{{ url_for('footprint_delete') }}",
+                    type: "POST",
+                    data:  JSON.stringify({'data':removeList}),
+                    contentType: "application/json",
+                    success: function (data) {
+                        console.log("delete");
+                        console.log(data['data']);
+                    }
+                });
+            } catch (e) {
+                alert(e);
+            }
+        }
+
+        function selectFootprint(rowId) {
+            var cipher = btoa($("#frm").serialize());
+            var rows = btoa("" + rowList);
+
+            var lat = $("#lat" + rowId).val();
+            var lon = $("#lon" + rowId).val();
+
+            $.ajax({
+                url: "{{ url_for('footprint_storage') }}",
+                type: "POST",
+                data: "cipher=" + cipher + "&rows=" + rows,
+                success: function (data) {
+                    window.location.href = "{{ url_for('footprint_select_location') }}?row={1}&lat={2}&lon={3}"
+                        .replace("{1}", rowId)
+                        .replace("{2}", lat)
+                        .replace("{3}", lon);
+                }, 
+                error: function(x, t, e) {
+                    alert("Unauthorized!");
+                }
+            });
+        }
+
+
+        function checkLength(tableID) {
+            var table = document.getElementById(tableID);
+            var rowCount = table.rows.length;
+            document.getElementById('rowCount').value = rowCount - 1;
+            var rowData = rowList.toString();
+            document.getElementById('rowList').value = rowData;
+            console.log(rowData);
+        }
+    </script>
+{% endblock %}

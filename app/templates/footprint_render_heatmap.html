@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="d-flex justify-content-center mt-5">
+        <div class="w-75" style="position: relative" aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item" aria-current="page"><a href="{{ url_for('main') }}">Home</a></li>
+                <li class="breadcrumb-item" aria-current="page"><a href="{{ url_for('render_footprint') }}">Patient Footprint Map</a></li>
+                <li class="breadcrumb-item" aria-current="page">Heatmap</li>
+                <li class="breadcrumb-item active" aria-current="page">{{ date }}</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="map-center">
+        <div class="row">
+            <div class="col-md-6">
+                <input id="pac-input" class="form-control" type="text" placeholder="Search Map">
+            </div>
+            <div class="col-md-6">
+                <button class="btn btn-primary" id="current_location">Back to current location</button>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div id="map" class="map"></div>
+        </div>
+    </div>
+
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAJ0tsek9WzXlFUJP5-DgYQFcFyahBGLsk&libraries=visualization,places&callback=initMap"></script>
+    <script>
+        $("#current_location").on("click", function() {
+            center_map();
+        });
+
+        function initMap(){
+            var date_data = '{{ date }}';
+            $.ajax({
+                url: "{{ url_for('heatmap_api', date='replace') }}".replace("replace", date_data),
+                type: "GET",
+                contentType: "application/json",
+                success: function (data) {
+                    console.log(data);
+                    var sanFrancisco = new google.maps.LatLng(20, 20);
+                    var heatMapData = data.map(function (location, i) {
+                        return {location:new google.maps.LatLng(parseFloat(location["lat"]),parseFloat(location["lng"])),
+                            weight:parseInt(location["duration"])/60}
+                    });
+
+                    map = new google.maps.Map(document.getElementById('map'), {
+                        center: sanFrancisco,
+                        zoom: 10,
+                        mapTypeId: 'roadmap'
+                    });
+                
+                    var heatmap = new google.maps.visualization.HeatmapLayer({
+                        data: heatMapData
+                    });
+                    heatmap.setMap(map);
+
+                    center_map();
+
+                    var input = document.getElementById('pac-input');
+                    var searchBox = new google.maps.places.SearchBox(input);
+
+                    searchBox.addListener('places_changed', function() {
+                        var places = searchBox.getPlaces();
+
+                        if (places.length == 0) {
+                            return;
+                        }
+
+                        var bounds = new google.maps.LatLngBounds();
+                        places.forEach(function(place) {
+                            if (!place.geometry) {
+                                console.log("Returned place contains no geometry");
+                                return;
+                            }
+
+                            if (place.geometry.viewport) {
+                                bounds.union(place.geometry.viewport);
+                            } else {
+                                bounds.extend(place.geometry.location);
+                            }
+                        });
+                        map.fitBounds(bounds);
+                    });
+                }
+            });
+        }
+
+        function center_map() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var pos = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    map.setCenter(pos);
+                })
+            }
+        }
+    </script>
+{% endblock %}
